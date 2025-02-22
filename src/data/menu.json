@@ -1,0 +1,20 @@
+[
+  {
+    "id": "1",
+    "name": "Chicken Biryani",
+    "price": 12.99,
+    "description": "Aromatic basmati rice cooked with spices and chicken."
+  },
+  {
+    "id": "2",
+    "name": "Paneer Butter Masala",
+    "price": 10.99,
+    "description": "Rich and creamy paneer curry cooked in tomato sauce."
+  },
+  {
+    "id": "3",
+    "name": "Caesar Salad",
+    "price": 8.99,
+    "description": "Fresh romaine lettuce with Caesar dressing and croutons."
+  }
+]
