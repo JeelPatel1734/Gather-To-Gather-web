@@ -3,10 +3,10 @@ import {
   View,
   Text,
   TextInput,
-  Button,
-  StyleSheet,
+  TouchableOpacity,
   Alert,
   ScrollView,
+  StyleSheet,
 } from 'react-native';
 
 export default function CateringScreen() {
@@ -19,7 +19,7 @@ export default function CateringScreen() {
     time: '',
   });
 
-  const handleConfirmBooking = () => {
+  const handleConfirmBooking = async () => {
     if (!formData.date || !formData.time) {
       Alert.alert('Error', 'Please enter both date and time.');
       return;
@@ -37,96 +37,55 @@ export default function CateringScreen() {
       return;
     }
 
-    const orderDetails = `
-      Location: ${formData.location || 'N/A'}
-      Event Type: ${formData.eventType || 'N/A'}
-      Guests: ${formData.guests || 'N/A'}
-      Special Requirements: ${formData.requirements || 'N/A'}
-      Scheduled Date: ${formData.date || 'N/A'}
-      Scheduled Time: ${formData.time || 'N/A'}
-    `;
-    Alert.alert(
-      'Booking Confirmed!',
-      `${orderDetails}\n\nPayment call will be forwarded within 1 business day.`
-    );
+    try {
+      const response = await fetch('http://192.168.1.5:8093/addCatering', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        Alert.alert('Booking Confirmed!', data.message);
+      } else {
+        Alert.alert('Booking Failed', data.message || 'Something went wrong');
+      }
+    } catch (error) {
+      Alert.alert('Booking Failed', error.message || 'Something went wrong');
+    }
   };
 
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Catering Booking</Text>
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Event Location:</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter event location"
-          value={formData.location}
-          onChangeText={(text) =>
-            setFormData((prev) => ({ ...prev, location: text }))
-          }
-        />
-      </View>
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Event Type:</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter event type"
-          value={formData.eventType}
-          onChangeText={(text) =>
-            setFormData((prev) => ({ ...prev, eventType: text }))
-          }
-        />
-      </View>
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Number of Guests:</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter number of guests"
-          keyboardType="numeric"
-          value={formData.guests}
-          onChangeText={(text) =>
-            setFormData((prev) => ({ ...prev, guests: text }))
-          }
-        />
-      </View>
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Special Requirements:</Text>
-        <TextInput
-          style={[styles.input, { height: 80 }]}
-          placeholder="Enter any special requirements"
-          value={formData.requirements}
-          multiline
-          onChangeText={(text) =>
-            setFormData((prev) => ({ ...prev, requirements: text }))
-          }
-        />
-      </View>
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Enter Date (DD-MM):</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter date(make sure you book a day ahead)"
-          value={formData.date}
-          onChangeText={(text) =>
-            setFormData((prev) => ({ ...prev, date: text }))
-          }
-        />
-      </View>
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Enter Time (HH:MM AM/PM):</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter time"
-          value={formData.time}
-          onChangeText={(text) =>
-            setFormData((prev) => ({ ...prev, time: text }))
-          }
-        />
-      </View>
-      <Button
-        title="Confirm Booking"
-        onPress={handleConfirmBooking}
-        color="#6200ee"
-      />
+      {[
+        { label: 'Event Location', key: 'location' },
+        { label: 'Event Type', key: 'eventType' },
+        { label: 'Number of Guests', key: 'guests', keyboardType: 'numeric' },
+        { label: 'Special Requirements', key: 'requirements', multiline: true, height: 100 },
+        { label: 'Enter Date (YYYY-MM-DD)', key: 'date' },
+        { label: 'Enter Time (HH:MM AM/PM)', key: 'time' },
+      ].map((item, index) => (
+        <View key={index} style={styles.inputContainer}>
+          <Text style={styles.label}>{item.label}:</Text>
+          <TextInput
+            style={[styles.input, item.height && { height: item.height }]}
+            placeholder={item.label}
+            keyboardType={item.keyboardType || 'default'}
+            multiline={item.multiline || false}
+            value={formData[item.key]}
+            onChangeText={(text) =>
+              setFormData((prev) => ({ ...prev, [item.key]: text }))
+            }
+          />
+        </View>
+      ))}
+      <TouchableOpacity style={styles.button} onPress={handleConfirmBooking}>
+        <Text style={styles.buttonText}>Confirm Booking</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -135,11 +94,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#ffe4e1',
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
+    color: '#ff4500',
     marginBottom: 20,
     textAlign: 'center',
   },
@@ -148,16 +108,38 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
     marginBottom: 5,
-    color: '#333',
+    color: '#ff1493',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
-    backgroundColor: '#fff',
-    height: 40,
+    borderColor: '#ff69b4',
+    borderRadius: 10,
+    padding: 12,
+    backgroundColor: '#fffaf0',
+    fontSize: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  button: {
+    backgroundColor: '#ff6347',
+    paddingVertical: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });

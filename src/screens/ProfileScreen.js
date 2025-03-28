@@ -1,155 +1,176 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, StyleSheet, Image, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ProfileScreen() {
-  const [isEditing, setIsEditing] = useState(false); // Toggle between View and Edit mode
+  const navigation = useNavigation();
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true); // To handle initial loading
   const [profile, setProfile] = useState({
-    name: 'Jeel Patel',
-    photo: require('./jeel.jpg'), // Local image file
-    birthdate: 'March 17, 2004',
-    address: '123 Maple Street, Toronto, ON',
-    email: 'jeelppatel1734@gmail.com',
-    phone: '+1 (437) 232-4752',
-    savedCards: [
-      { id: '1', type: 'Visa', number: '**** **** **** 4321', expiry: '12/25' },
-      { id: '2', type: 'MasterCard', number: '**** **** **** 5657', expiry: '03/26' },
-    ],
+    name: '',
+    photo: require('./jeel.jpg'), // Default local image
+    birthdate: '',
+    address: '',
+    email: '',
+    phone: '',
   });
 
-  // State for Catering Details
-  const [cateringDetails, setCateringDetails] = useState(null);
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const storedEmail = await AsyncStorage.getItem('userEmail'); // Fetch email from AsyncStorage
+        if (storedEmail) {
+          await fetchProfile(storedEmail);
+        } else {
+          setProfile((prevProfile) => ({ ...prevProfile, email: '' })); // Set email to empty if no stored email
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error fetching email:', error);
+        setLoading(false);
+      }
+    };
+    loadProfile();
+  }, []);
 
-  const handleSave = () => {
-    setIsEditing(false);
-    Alert.alert('Profile Updated', 'Your profile details have been updated successfully.');
+  const fetchProfile = async (email) => {
+    try {
+      const response = await fetch(`http://192.168.1.5:8093/getProfile?email=${email}`);
+      const data = await response.json();
+
+      if (response.ok && data.profile) {
+        setProfile({
+          name: data.profile.name || '',
+          photo: data.profile.photo || require('./jeel.jpg'), // Use default image if empty
+          birthdate: data.profile.birthdate || '',
+          address: data.profile.address || '',
+          email: data.profile.email || email, // Use fetched email, fallback to stored email
+          phone: data.profile.phone || '',
+        });
+      } else {
+        // If profile not found, just keep the email from AsyncStorage
+        setProfile((prevProfile) => ({ ...prevProfile, email }));
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to fetch profile.');
+      console.error('Fetch Profile Error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleConfirmBooking = () => {
-    // Dummy booking details for demonstration
-    const bookingDetails = {
-      date: '2025-03-17',
-      time: '6:00 PM',
-      location: '1 Fountainhead',
-      eventType: 'Birthday Party',
-      guests: 50,
-      additionalDetails: 'less spicy food',
-      hey:'Booking Confirmed! Your catering booking is confirmed. Payment call will be forwarded within 1 business day.'
+  const handleLogOut = async () => {
+    await AsyncStorage.removeItem('userEmail'); 
+    navigation.navigate('Login');
+  };
+const handleOrderDetails=async () => {
+    navigation.navigate('OrderDetailScreen');
+  };
+  const handleSave = async () => {
+    try {
+      const response = await fetch('http://192.168.1.5:8093/addProfile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(profile),
+      });
 
-    };
-
-    setCateringDetails(bookingDetails);
-    Alert.alert(
-      'Booking Confirmed!',
-      `Your catering booking is confirmed. Payment call will be forwarded within 1 business day.`
-    );
+      const data = await response.json();
+      
+      if (response.ok) {
+        Alert.alert('Success', data.message);
+        setIsEditing(false);
+        if (!profile.email) {
+          await AsyncStorage.setItem('email', profile.email); // Store email if new profile
+        }
+      } else {
+        Alert.alert('Error', data.message || 'Failed to update profile');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+      console.error('Profile Update Error:', error);
+    }
   };
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Image source={profile.photo} style={styles.photo} />
-        {isEditing ? (
-          <TextInput
-            style={[styles.name, styles.input]}
-            value={profile.name}
-            onChangeText={(text) => setProfile({ ...profile, name: text })}
-            placeholder="Enter your name"
-          />
-        ) : (
-          <Text style={styles.name}>{profile.name}</Text>
-        )}
-      </View>
-
-      <View style={styles.content}>
-        <Text style={styles.sectionTitle}>📧 Email</Text>
-        {isEditing ? (
-          <TextInput
-            style={[styles.input]}
-            value={profile.email}
-            onChangeText={(text) => setProfile({ ...profile, email: text })}
-            placeholder="Enter your email"
-            keyboardType="email-address"
-          />
-        ) : (
-          <Text style={styles.text}>{profile.email}</Text>
-        )}
-
-        <Text style={styles.sectionTitle}>📞 Contact Number</Text>
-        {isEditing ? (
-          <TextInput
-            style={[styles.input]}
-            value={profile.phone}
-            onChangeText={(text) => setProfile({ ...profile, phone: text })}
-            placeholder="Enter your phone number"
-            keyboardType="phone-pad"
-          />
-        ) : (
-          <Text style={styles.text}>{profile.phone}</Text>
-        )}
-
-        <Text style={styles.sectionTitle}>🎂 Birth Date</Text>
-        {isEditing ? (
-          <TextInput
-            style={[styles.input]}
-            value={profile.birthdate}
-            onChangeText={(text) => setProfile({ ...profile, birthdate: text })}
-            placeholder="Enter your birthdate"
-          />
-        ) : (
-          <Text style={styles.text}>{profile.birthdate}</Text>
-        )}
-
-        <Text style={styles.sectionTitle}>📍 Address</Text>
-        {isEditing ? (
-          <TextInput
-            style={[styles.input]}
-            value={profile.address}
-            onChangeText={(text) => setProfile({ ...profile, address: text })}
-            placeholder="Enter your address"
-          />
-        ) : (
-          <Text style={styles.text}>{profile.address}</Text>
-        )}
-
-        <Text style={styles.sectionTitle}>💳 Saved Cards</Text>
-        {profile.savedCards.map((card) => (
-          <View key={card.id} style={styles.card}>
-            <Text style={styles.text}>
-              {card.type}: {card.number} (Expiry: {card.expiry})
-            </Text>
+      {loading ? (
+        <ActivityIndicator size="large" color="#6200ee" style={styles.loader} />
+      ) : (
+        <>
+          <View style={styles.header}>
+            <Image source={profile.photo} style={styles.photo} />
+            {isEditing ? (
+              <TextInput
+                style={[styles.name, styles.input]}
+                value={profile.name}
+                onChangeText={(text) => setProfile({ ...profile, name: text })}
+                placeholder="Enter your name"
+              />
+            ) : (
+              <Text style={styles.name}>{profile.name || 'Your Name'}</Text>
+            )}
           </View>
-        ))}
 
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: isEditing ? '#4CAF50' : '#6200ee' }]}
-          onPress={isEditing ? handleSave : () => setIsEditing(true)}
-        >
-          <Text style={styles.buttonText}>{isEditing ? 'Save Changes' : 'Edit Profile'}</Text>
-        </TouchableOpacity>
-      </View>
+          <View style={styles.content}>
+            <Text style={styles.sectionTitle}>📧 Email</Text>
+            <TextInput
+              style={[styles.input]}
+              value={profile.email}
+              onChangeText={(text) => setProfile({ ...profile, email: text })}
+              placeholder="Enter your email"
+              keyboardType="email-address"
+              editable={!profile.email} // Email is editable if empty
+            />
 
-      {/* Display Catering Details */}
-      {cateringDetails && (
-        <View style={styles.cateringSection}>
-          <Text style={styles.sectionTitle}>📋 Caterings</Text>
-          <Text style={styles.cateringText}>📅 Date: {cateringDetails.date}</Text>
-          <Text style={styles.cateringText}>⏰ Time: {cateringDetails.time}</Text>
-          <Text style={styles.cateringText}>📍 Location: {cateringDetails.location}</Text>
-          <Text style={styles.cateringText}>🎉 Event Type: {cateringDetails.eventType}</Text>
-          <Text style={styles.cateringText}>👥 Guests: {cateringDetails.guests}</Text>
-          <Text style={styles.cateringText}>
-            📜 Additional Details: {cateringDetails.additionalDetails || 'None'}
-          </Text>
-        </View>
+            <Text style={styles.sectionTitle}>📞 Contact Number</Text>
+            <TextInput
+              style={[styles.input]}
+              value={profile.phone}
+              onChangeText={(text) => setProfile({ ...profile, phone: text })}
+              placeholder="Enter your phone number"
+              keyboardType="phone-pad"
+            />
+
+            <Text style={styles.sectionTitle}>🎂 Birth Date</Text>
+            <TextInput
+              style={[styles.input]}
+              value={profile.birthdate}
+              onChangeText={(text) => setProfile({ ...profile, birthdate: text })}
+              placeholder="Enter your birthdate"
+            />
+
+            <Text style={styles.sectionTitle}>📍 Address</Text>
+            <TextInput
+              style={[styles.input]}
+              value={profile.address}
+              onChangeText={(text) => setProfile({ ...profile, address: text })}
+              placeholder="Enter your address"
+            />
+
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: isEditing ? '#4CAF50' : '#6200ee' }]}
+              onPress={isEditing ? handleSave : () => setIsEditing(true)}
+            >
+              <Text style={styles.buttonText}>{isEditing ? 'Save Changes' : 'Edit Profile'}</Text>
+            </TouchableOpacity>
+   <TouchableOpacity
+              style={[styles.button, { backgroundColor: '#6200ee' }]}
+              onPress={handleOrderDetails}
+            >
+              <Text style={styles.buttonText}>{'Order Details'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: '#6200ee' }]}
+              onPress={handleLogOut}
+            >
+              <Text style={styles.buttonText}>{'Log Out'}</Text>
+            </TouchableOpacity>
+          </View>
+        </>
       )}
-
-      {/* Dummy Button to Confirm Booking */}
-      <TouchableOpacity
-        style={[styles.button, { marginTop: 20, backgroundColor: '#03a9f4' }]}
-        onPress={handleConfirmBooking}
-      >
-        <Text style={styles.buttonText}>Confirm Catering Booking</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -158,6 +179,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f9f9f9',
+  },
+  loader: {
+    flex: 1,
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginTop: 50,
   },
   header: {
     alignItems: 'center',
@@ -183,11 +210,6 @@ const styles = StyleSheet.create({
     color: '#6200ee',
     marginTop: 20,
   },
-  text: {
-    fontSize: 16,
-    color: '#555',
-    marginTop: 5,
-  },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
@@ -195,12 +217,6 @@ const styles = StyleSheet.create({
     padding: 10,
     marginTop: 5,
     backgroundColor: '#fff',
-  },
-  card: {
-    backgroundColor: '#f1f1f1',
-    padding: 10,
-    borderRadius: 8,
-    marginTop: 10,
   },
   button: {
     marginTop: 30,
@@ -212,21 +228,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
-  },
-  cateringSection: {
-    marginTop: 20,
-    padding: 15,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  cateringText: {
-    fontSize: 16,
-    marginBottom: 5,
-    color: '#333',
   },
 });
