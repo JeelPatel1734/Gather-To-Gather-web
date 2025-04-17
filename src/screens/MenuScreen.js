@@ -21,7 +21,6 @@ export default function MenuScreen() {
   const [customizations, setCustomizations] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // Fetch email from AsyncStorage
   useEffect(() => {
     const fetchEmail = async () => {
       try {
@@ -36,9 +35,8 @@ export default function MenuScreen() {
     fetchEmail();
   }, []);
 
-  // Fetch menu items from API
   useEffect(() => {
-    fetch('http://192.168.1.5:8093/getmenuItem')
+    fetch('http://localhost:8093/getmenuItem')
       .then((response) => response.json())
       .then((data) => {
         if (data.message === 'menuItem fetched successfully') {
@@ -58,7 +56,6 @@ export default function MenuScreen() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Handle adding items to cart
   const handleAddToCart = (item) => {
     if (!userEmail) {
       Alert.alert('Error', 'User email not found. Please log in again.');
@@ -66,31 +63,31 @@ export default function MenuScreen() {
     }
 
     const customization = customizations[item._id] || {};
+    const quantity = customization.quantity || 1;
     const finalItem = {
       ...item,
       ...customization,
-      totalPrice: (item.price * (customization.quantity || 1)).toFixed(2),
+      totalPrice: (item.price * quantity).toFixed(2),
     };
 
     addToCart(finalItem);
 
     const postData = {
-      email: userEmail, // Use retrieved email here
+      email: userEmail,
       name: finalItem.name,
-      price: finalItem.price,
-      image: finalItem.image,
-      quantity: customization.quantity || 1,
+      price: item.price,
+      image: item.image,
+      quantity: quantity,
     };
 
-    fetch('http://192.168.1.5:8093/addCart', {
+    fetch('http://localhost:8093/addCart', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(postData),
     })
       .then((response) => response.json())
       .then((data) => {
+        console.log('Backend response:', data);
         if (data.message === 'Cart added successfully') {
           alert(`${finalItem.name} added to cart!`);
         } else {
@@ -98,12 +95,11 @@ export default function MenuScreen() {
         }
       })
       .catch((error) => {
-        console.error(error);
+        console.error('Fetch error:', error);
         alert('Error adding item to cart.');
       });
   };
 
-  // Render menu items
   const renderMenuItem = ({ item }) => (
     <View style={styles.item}>
       <Image source={{ uri: item.image }} style={styles.image} />
@@ -117,7 +113,10 @@ export default function MenuScreen() {
           onChangeText={(value) =>
             setCustomizations((prev) => ({
               ...prev,
-              [item._id]: { ...prev[item._id], quantity: parseInt(value) || 1 },
+              [item._id]: {
+                ...prev[item._id],
+                quantity: parseInt(value) || 1,
+              },
             }))
           }
         />
@@ -127,11 +126,17 @@ export default function MenuScreen() {
           onChangeText={(value) =>
             setCustomizations((prev) => ({
               ...prev,
-              [item._id]: { ...prev[item._id], specialRequest: value },
+              [item._id]: {
+                ...prev[item._id],
+                specialRequest: value,
+              },
             }))
           }
         />
-        <TouchableOpacity style={styles.addButton} onPress={() => handleAddToCart(item)}>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => handleAddToCart(item)}
+        >
           <Text style={styles.addButtonText}>Add to Cart</Text>
         </TouchableOpacity>
       </View>
@@ -139,7 +144,7 @@ export default function MenuScreen() {
   );
 
   if (loading) {
-    return <Text>Loading...</Text>;
+    return <Text style={{ margin: 20 }}>Loading menu...</Text>;
   }
 
   const categories = Object.keys(menuData);
@@ -193,12 +198,14 @@ const styles = StyleSheet.create({
   },
   categories: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     marginBottom: 20,
     padding: 10,
   },
   categoryButton: {
     padding: 10,
+    margin: 5,
     borderRadius: 12,
     backgroundColor: '#ddd',
   },
@@ -254,4 +261,3 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
-

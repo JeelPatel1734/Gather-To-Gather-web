@@ -38,7 +38,7 @@ export default function PaymentScreen() {
   // Fetch cart items based on email
   const fetchCartItems = async (userEmail) => {
     try {
-      const response = await fetch(`http://192.168.1.5:8093/getCart?email=${userEmail}`);
+      const response = await fetch(`http://localhost:8093/getCart?email=${userEmail}`);
       const data = await response.json();
       if (data.message === 'Cart fetched successfully') {
         setCartItems(data.products);
@@ -92,7 +92,7 @@ const handlePayment = async () => {
 
   // Send booking data to the backend
   try {
-    const bookingResponse = await fetch('http://192.168.1.5:8093/addBook', {
+    const bookingResponse = await fetch('http://localhost:8093/addBook', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -106,7 +106,7 @@ const handlePayment = async () => {
       Alert.alert('Payment Successful', 'Your order has been placed successfully!');
 
       // Clear cart after successful booking
-      await fetch(`http://192.168.1.5:8093/clearCart?email=${email}`, { method: 'DELETE' });
+      await fetch(`http://localhost:8093/clearCart?email=${email}`, { method: 'DELETE' });
 
       // Navigate to home screen
       navigation.replace('Main');

@@ -1,14 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, Image, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  StyleSheet, 
+  Image, 
+  TouchableOpacity, 
+  ScrollView, 
+  Alert, 
+  ActivityIndicator 
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(true); // To handle initial loading
+  const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState({
-    name: '',
+    name: 'Jeel Patel',
     photo: require('./jeel.jpg'), // Default local image
     birthdate: '',
     address: '',
@@ -19,11 +29,12 @@ export default function ProfileScreen() {
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const storedEmail = await AsyncStorage.getItem('userEmail'); // Fetch email from AsyncStorage
+        const storedEmail = await AsyncStorage.getItem('userEmail');
         if (storedEmail) {
           await fetchProfile(storedEmail);
         } else {
-          setProfile((prevProfile) => ({ ...prevProfile, email: '' })); // Set email to empty if no stored email
+          // No email stored, set email empty and finish loading
+          setProfile((prev) => ({ ...prev, email: '' }));
           setLoading(false);
         }
       } catch (error) {
@@ -36,21 +47,31 @@ export default function ProfileScreen() {
 
   const fetchProfile = async (email) => {
     try {
-      const response = await fetch(`http://192.168.1.5:8093/getProfile?email=${email}`);
+      const response = await fetch(`http://localhost:8093/getProfile?email=${email}`);
+      if (!response.ok) {
+        // If profile not found (404) or another error, handle gracefully.
+        if (response.status === 404) {
+          console.log('Profile not found. Using default values.');
+          setProfile((prev) => ({ ...prev, email }));
+          setLoading(false);
+          return;
+        } else {
+          const errorData = await response.json();
+          Alert.alert('Error', errorData.message || 'Failed to fetch profile');
+          setLoading(false);
+          return;
+        }
+      }
       const data = await response.json();
-
-      if (response.ok && data.profile) {
+      if (data.profile) {
         setProfile({
           name: data.profile.name || '',
-          photo: data.profile.photo || require('./jeel.jpg'), // Use default image if empty
+          photo: data.profile.photo ? { uri: data.profile.photo } : require('./jeel.jpg'),
           birthdate: data.profile.birthdate || '',
           address: data.profile.address || '',
-          email: data.profile.email || email, // Use fetched email, fallback to stored email
+          email: data.profile.email || email,
           phone: data.profile.phone || '',
         });
-      } else {
-        // If profile not found, just keep the email from AsyncStorage
-        setProfile((prevProfile) => ({ ...prevProfile, email }));
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to fetch profile.');
@@ -61,29 +82,30 @@ export default function ProfileScreen() {
   };
 
   const handleLogOut = async () => {
-    await AsyncStorage.removeItem('userEmail'); 
+    await AsyncStorage.removeItem('userEmail');
     navigation.navigate('Login');
   };
-const handleOrderDetails=async () => {
+
+  const handleOrderDetails = () => {
     navigation.navigate('OrderDetailScreen');
   };
+
   const handleSave = async () => {
     try {
-      const response = await fetch('http://192.168.1.5:8093/addProfile', {
+      const response = await fetch('http://localhost:8093/addProfile', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(profile),
       });
-
       const data = await response.json();
-      
       if (response.ok) {
         Alert.alert('Success', data.message);
         setIsEditing(false);
-        if (!profile.email) {
-          await AsyncStorage.setItem('email', profile.email); // Store email if new profile
+        // Save the email to AsyncStorage if needed
+        if (profile.email) {
+          await AsyncStorage.setItem('userEmail', profile.email);
         }
       } else {
         Alert.alert('Error', data.message || 'Failed to update profile');
@@ -110,24 +132,25 @@ const handleOrderDetails=async () => {
                 placeholder="Enter your name"
               />
             ) : (
-              <Text style={styles.name}>{profile.name || 'Your Name'}</Text>
+              <Text style={styles.name}>{profile.name || 'Jeel Patel'}</Text>
             )}
           </View>
 
           <View style={styles.content}>
             <Text style={styles.sectionTitle}>📧 Email</Text>
             <TextInput
-              style={[styles.input]}
-              value={profile.email}
-              onChangeText={(text) => setProfile({ ...profile, email: text })}
-              placeholder="Enter your email"
-              keyboardType="email-address"
-              editable={!profile.email} // Email is editable if empty
-            />
+  style={styles.input}
+  value={profile.email}
+  onChangeText={(text) => setProfile({ ...profile, email: text })}
+  placeholder="Enter your email"
+  keyboardType="email-address"
+  editable={isEditing}
+/>
+
 
             <Text style={styles.sectionTitle}>📞 Contact Number</Text>
             <TextInput
-              style={[styles.input]}
+              style={styles.input}
               value={profile.phone}
               onChangeText={(text) => setProfile({ ...profile, phone: text })}
               placeholder="Enter your phone number"
@@ -136,7 +159,7 @@ const handleOrderDetails=async () => {
 
             <Text style={styles.sectionTitle}>🎂 Birth Date</Text>
             <TextInput
-              style={[styles.input]}
+              style={styles.input}
               value={profile.birthdate}
               onChangeText={(text) => setProfile({ ...profile, birthdate: text })}
               placeholder="Enter your birthdate"
@@ -144,7 +167,7 @@ const handleOrderDetails=async () => {
 
             <Text style={styles.sectionTitle}>📍 Address</Text>
             <TextInput
-              style={[styles.input]}
+              style={styles.input}
               value={profile.address}
               onChangeText={(text) => setProfile({ ...profile, address: text })}
               placeholder="Enter your address"
@@ -154,19 +177,23 @@ const handleOrderDetails=async () => {
               style={[styles.button, { backgroundColor: isEditing ? '#4CAF50' : '#6200ee' }]}
               onPress={isEditing ? handleSave : () => setIsEditing(true)}
             >
-              <Text style={styles.buttonText}>{isEditing ? 'Save Changes' : 'Edit Profile'}</Text>
+              <Text style={styles.buttonText}>
+                {isEditing ? 'Save Changes' : 'Edit Profile'}
+              </Text>
             </TouchableOpacity>
-   <TouchableOpacity
+
+            <TouchableOpacity
               style={[styles.button, { backgroundColor: '#6200ee' }]}
               onPress={handleOrderDetails}
             >
-              <Text style={styles.buttonText}>{'Order Details'}</Text>
+              <Text style={styles.buttonText}>Order Details</Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               style={[styles.button, { backgroundColor: '#6200ee' }]}
               onPress={handleLogOut}
             >
-              <Text style={styles.buttonText}>{'Log Out'}</Text>
+              <Text style={styles.buttonText}>Log Out</Text>
             </TouchableOpacity>
           </View>
         </>

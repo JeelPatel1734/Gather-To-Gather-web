@@ -1,6 +1,6 @@
 import React from 'react';
-import { CartProvider } from './src/context/CartProvider'; // Ensure correct path
-import AppNavigator from './src/navigation/AppNavigator'; // Ensure correct path
+import { CartProvider } from './src/context/CartProvider';
+import AppNavigator from './src/navigation/AppNavigator'; // your navigator
 
 export default function App() {
   return (

@@ -37,7 +37,7 @@ export default function OrderDetailScreen() {
 
   const fetchProfile = async (email) => {
     try {
-      const response = await fetch(`http://192.168.1.5:8093/getProfile?email=${email}`);
+      const response = await fetch(`http://localhost:8093/getProfile?email=${email}`);
       const data = await response.json();
       if (response.ok && data.profile) {
         setProfile({
@@ -58,12 +58,11 @@ export default function OrderDetailScreen() {
 
   const fetchOrders = async (email) => {
     try {
-      const response = await fetch(`http://192.168.1.5:8093/getBook?email=${email}`);
+      const response = await fetch(`http://localhost:8093/getBook?email=${email}`);
       const data = await response.json();
 
       if (response.ok && data.books) {
         const formattedOrders = data.books.map((order) => ({
-         
           total: order.total || 'N/A',
           gst: order.gst || 'N/A',
           deliveryFee: order.deliveryFee || 'N/A',
@@ -86,28 +85,26 @@ export default function OrderDetailScreen() {
     }
   };
 
-const updateOrderStatus = async (email, newStatus) => {
+  const updateOrderStatus = async (email, newStatus) => {
     try {
-          const storedEmail = await AsyncStorage.getItem('userEmail');
-        const response = await fetch(`http://192.168.1.5:8093/updateOrderStatus`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email:storedEmail, status: newStatus }), // Using email instead of _id
-        });
+      const storedEmail = await AsyncStorage.getItem('userEmail');
+      const response = await fetch(`http://localhost:8093/updateOrderStatus`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: storedEmail, status: newStatus }), // Using email instead of _id
+      });
 
-        if (response.ok) {
-            console.log("✅ Order status updated successfully");
-        } else {
-            console.log("❌ Failed to update status");
-        }
+      if (response.ok) {
+        console.log("✅ Order status updated successfully");
+      } else {
+        console.log("❌ Failed to update status");
+      }
     } catch (error) {
-        console.error("❌ Error updating order status:", error);
+      console.error("❌ Error updating order status:", error);
     }
-};
-
-
+  };
 
   const handleLogOut = async () => {
     await AsyncStorage.removeItem('userEmail');
@@ -115,7 +112,7 @@ const updateOrderStatus = async (email, newStatus) => {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={{ flexGrow: 1 }}>
       {loading ? (
         <ActivityIndicator size="large" color="#6200ee" style={styles.loader} />
       ) : (
@@ -137,14 +134,14 @@ const updateOrderStatus = async (email, newStatus) => {
                 <View style={styles.statusContainer}>
                   <Text style={styles.orderText}>📌 Status:</Text>
                   <Picker
-    selectedValue={order.status}
-    style={styles.picker}
-    enabled={order.status !== "Cancel"} // Disable if status is "Cancel"
-    onValueChange={(itemValue) => updateOrderStatus(order.id, itemValue)}
-  >
-    <Picker.Item label="Paid" value="Paid" />
-    <Picker.Item label="Cancel" value="Cancel" />
-  </Picker>
+                    selectedValue={order.status}
+                    style={styles.picker}
+                    enabled={order.status !== "Cancel"} // Disable if status is "Cancel"
+                    onValueChange={(itemValue) => updateOrderStatus(order.id, itemValue)}
+                  >
+                    <Picker.Item label="Paid" value="Paid" />
+                    <Picker.Item label="Cancel" value="Cancel" />
+                  </Picker>
                 </View>
               </View>
             ))

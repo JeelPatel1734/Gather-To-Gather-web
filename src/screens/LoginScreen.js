@@ -26,11 +26,15 @@ const LoginScreen = ({ navigation }) => {
         `http://localhost:8093/validateUser?email=${email}&password=${password}`
       );
       const data = await response.json();
-
+      navigation.navigate('Main');
       if (data.exists) {
          await AsyncStorage.setItem('userEmail', email);
         Alert.alert('Success', 'Login successful!', [
-          { text: 'OK', onPress: () => navigation.replace('Main') },
+          { text: 'OK', onPress: () => 
+            // navigation.navigate('Payment') // Navigate to the Payment screen
+            navigation.navigate('Main')
+            // navigation.replace('Payment')
+           },
         ]);
       } else {
         Alert.alert('Error', 'Invalid email or password');
@@ -41,6 +45,9 @@ const LoginScreen = ({ navigation }) => {
     }
   };
 
+  // const handleLogin = async () => {
+  //   navigation.navigate('Main'); // Navigate to the Payment screen directly
+  // };
   return (
     <View style={styles.container}>
       <Image

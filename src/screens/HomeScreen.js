@@ -15,7 +15,7 @@ export default function HomeScreen({ navigation }) {
 
   // Fetch products from the API
   useEffect(() => {
-    fetch('http://192.168.1.5:8093/getproducts')
+    fetch('http://localhost:8093/getproducts')
       .then((response) => response.json())
       .then((data) => {
         if (data.message === 'Products fetched successfully') {
@@ -34,7 +34,7 @@ export default function HomeScreen({ navigation }) {
   const renderFeaturedItem = ({ item }) => (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => navigation.navigate('Menu', { selectedItem: item})}
+      onPress={() => navigation.navigate('Menu', { selectedItem: item })}
     >
       <Image source={{ uri: item.image }} style={styles.image} />
       <View style={styles.cardContent}>
@@ -57,7 +57,7 @@ export default function HomeScreen({ navigation }) {
         </Text>
       </View>
 
-      <Text style={styles.sectionTitle}>🌟 Featured Items</Text>
+      <Text style={styles.sectionTitle}>🌟 Best Quality Assured... </Text>
       <FlatList
         data={featuredItems}
         horizontal
@@ -69,7 +69,7 @@ export default function HomeScreen({ navigation }) {
 
       <View style={styles.servicesSection}>
         <Text style={styles.sectionTitle}>🍽️ Our Services</Text>
-        <Text style={styles.serviceText}>✔️ Dine-In and Takeaway</Text>
+        <Text style={styles.serviceText}>✔️ Catering service & Takeaway</Text>
         <Text style={styles.serviceText}>✔️ Customized Catering for Events</Text>
         <Text style={styles.serviceText}>✔️ Exclusive Indian Cuisine</Text>
       </View>
@@ -82,6 +82,18 @@ export default function HomeScreen({ navigation }) {
         <TouchableOpacity style={styles.instaButton} onPress={handleOpenInstagram}>
           <Text style={styles.instaButtonText}>Follow Us on Instagram</Text>
         </TouchableOpacity>
+      </View>
+
+      {/* Availability Hours Block */}
+      <View style={styles.availabilitySection}>
+        <Text style={styles.sectionTitle}>🕒 Takeaway Hours</Text>
+        <Text style={styles.availabilityText}>Monday: 9:00 AM - 11:00 PM</Text>
+        <Text style={styles.availabilityText}>Tuesday: 9:00 AM - 11:00 PM</Text>
+        <Text style={styles.availabilityText}>Wednesday: 9:00 AM - 11:00 PM</Text>
+        <Text style={styles.availabilityText}>Thursday: 9:00 AM - 11:00 PM</Text>
+        <Text style={styles.availabilityText}>Friday: 9:00 AM - 11:00 PM</Text>
+        <Text style={styles.availabilityText}>Saturday: 10:00 AM - 2:00 AM</Text>
+        <Text style={styles.availabilityText}>Sunday: 10:00 AM - 2:00 AM</Text>
       </View>
     </ScrollView>
   );
@@ -201,5 +213,22 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 17,
   },
+  availabilitySection: {
+    padding: 15,
+    backgroundColor: '#fff',
+    marginHorizontal: 15,
+    borderRadius: 12,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 4,
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  availabilityText: {
+    fontSize: 17,
+    color: '#555',
+    marginBottom: 10,
+  },
 });
-

@@ -333,7 +333,7 @@ export default function DetailsScreen() {
           Welcome to <Text style={styles.highlight}>Gather-to-Gather</Text>!
         </Text>
         <Text style={styles.description}>
-          We deliver delicious meals with love and fresh ingredients. Whether it's dine-in, takeaway, or catering for your events, we've got you covered!
+          We deliver delicious meals with love and fresh ingredients. Whether it's takeaway, or catering for your events, we've got you covered!
         </Text>
 
         <View style={styles.contactSection}>

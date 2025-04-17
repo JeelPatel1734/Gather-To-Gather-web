@@ -35,7 +35,7 @@ const fetchCartItems = async () => {
       return;
     }
 
-    const response = await fetch(`http://192.168.1.5:8093/getCart?email=${email}`);
+    const response = await fetch(`http://localhost:8093/getCart?email=${email}`);
     const data = await response.json();
 
     if (data.message === "Cart fetched successfully") {
@@ -70,7 +70,7 @@ const fetchCartItems = async () => {
       return;
     }
 
-    const response = await fetch(`http://192.168.1.5:8093/clearCart?email=${email}`, {
+    const response = await fetch(`http://localhost:8093/clearCart?email=${email}`, {
       method: 'DELETE',
     });
 
